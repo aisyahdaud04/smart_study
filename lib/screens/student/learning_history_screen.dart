@@ -1,0 +1,53 @@
+import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import '../../utils/app_theme.dart';
+import '../../utils/locale_provider.dart';
+
+class LearningHistoryScreen extends StatelessWidget {
+  const LearningHistoryScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final lang = context.watch<LocaleProvider>().languageCode;
+    final user = FirebaseAuth.instance.currentUser;
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(title: Text(lang == 'en' ? 'Learning History' : 'Sejarah Pembelajaran')),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('enrollments')
+            .where('studentId', isEqualTo: user?.uid)
+            .orderBy('enrolledAt', descending: true)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final docs = snapshot.data?.docs ?? [];
+          if (docs.isEmpty) {
+            return Center(child: Text(lang == 'en' ? 'No learning history yet.' : 'Tiada sejarah pembelajaran.'));
+          }
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: docs.length,
+            itemBuilder: (context, index) {
+              final data = docs[index].data() as Map<String, dynamic>;
+              final date = (data['enrolledAt'] as Timestamp?)?.toDate() ?? DateTime.now();
+              return Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                child: ListTile(
+                  leading: const Icon(Icons.history, color: AppColors.primary),
+                  title: Text(data['subjectName'] ?? 'Unknown'),
+                  subtitle: Text('Tutor: ${data['tutorName']} • ${date.day}/${date.month}/${date.year}'),
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
