@@ -6,11 +6,14 @@ import 'screens/splash_screen.dart';
 import 'utils/app_theme.dart';
 import 'utils/locale_provider.dart';
 
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
   runApp(const SmartStudyApp());
 }
 
